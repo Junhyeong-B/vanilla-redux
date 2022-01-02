@@ -1,34 +1,56 @@
 import { createStore } from "redux";
 
-const add = document.getElementById("add");
-const minus = document.getElementById("minus");
-const number = document.querySelector("span");
-number.innerText = 0;
+const form = document.querySelector("form");
+const input = document.querySelector("input");
+const ul = document.querySelector("ul");
 
-const ADD = "ADD";
-const MINUS = "MINUS";
+const ADD_TODO = "ADD_TODO";
+const DELETE_TODO = "DELETE_TODO";
 
-const countModifier = (count = 0, action) => {
+const reducer = (state = [], action) => {
   switch (action.type) {
-    case ADD:
-      return count + 1;
-    case MINUS:
-      return count - 1;
+    case ADD_TODO:
+      return [...state, { text: action.text, id: Date.now() }];
+    case DELETE_TODO:
+      return state.filter((todo) => +todo.id !== +action.id);
     default:
-      return count;
+      return state;
   }
 };
 
-const countStore = createStore(countModifier);
+const store = createStore(reducer);
 
-const onChange = () => {
-  number.innerText = countStore.getState();
+store.subscribe(() => console.log(store.getState()));
+
+const paintTodos = () => {
+  const todos = store.getState();
+  ul.innerHTML = `${todos
+    .map(
+      (todo) =>
+        `<li>${todo.text} <button class="X" data-id="${todo.id}">X</button></li>`
+    )
+    .join("")}`;
 };
 
-countStore.subscribe(onChange);
+store.subscribe(paintTodos);
 
-const handleAdd = () => countStore.dispatch({ type: ADD });
-const handleMinus = () => countStore.dispatch({ type: MINUS });
+const addTodo = (text) => {
+  store.dispatch({ type: ADD_TODO, text });
+};
 
-add.addEventListener("click", handleAdd);
-minus.addEventListener("click", handleMinus);
+const deleteTodo = (e) => {
+  const { id } = e.target.dataset;
+  if (id) {
+    store.dispatch({ type: DELETE_TODO, id });
+  }
+};
+
+const onSubmit = (e) => {
+  e.preventDefault();
+  const todo = input.value;
+  input.value = "";
+  addTodo(todo);
+};
+
+form.addEventListener("submit", onSubmit);
+ul.addEventListener("click", deleteTodo);
